@@ -55,12 +55,31 @@ pub mod zoo_widget;
 pub mod labels;
 pub mod axis_physical_scale_widget;
 
+use crate::result::{GuiError, Result};
+
 pub trait StatefulWidget {
     type Value<'p>
     where
         Self: 'p;
     fn draw_and_parse(&mut self, ui: &mut egui::Ui, id: egui::Id);
     fn state<'p>(&'p self) -> Self::Value<'p>;
+}
+
+pub struct DrawArgs<'a>{
+    pub ui: &'a mut egui::Ui,
+    pub id: egui::Id,
+}
+
+pub trait Draw{
+    type Resp;
+
+    fn draw<'args>(&mut self, args: DrawArgs<'args>) -> egui::InnerResponse<Self::Resp>;
+}
+
+pub trait GetValue{
+    type Value<'val> where Self: 'val;
+
+    fn get_value<'val>(&'val self) -> Self::Value<'val>;
 }
 
 pub trait ValueWidget{

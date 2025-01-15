@@ -1,7 +1,10 @@
-use super::{util::group_frame, Restore, StatefulWidget, ValueWidget};
+use super::{util::group_frame, Draw, Restore, StatefulWidget, ValueWidget};
 
 #[derive(Clone, Debug, Default)]
 pub struct StagingOpt<Stg>(pub Option<Stg>);
+
+impl<Stg> Draw for StagingOpt<Stg>{
+}
 
 impl<Stg> StatefulWidget for StagingOpt<Stg>
 where

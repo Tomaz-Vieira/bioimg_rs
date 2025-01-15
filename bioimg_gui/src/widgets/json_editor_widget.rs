@@ -1,9 +1,13 @@
 use crate::{project_data::JsonObjectEditorWidgetRawData, result::Result};
-use super::{code_editor_widget::{CodeEditorWidget, JsonLanguage}, error_display::show_if_error, Restore, StatefulWidget, ValueWidget};
+use super::{Draw, DrawArgs, Restore, StatefulWidget, ValueWidget, GetValue};
+use super::code_editor_widget::{CodeEditorWidget, JsonLanguage};
+use super::error_display::show_if_error;
+
+pub type JsonObject = serde_json::Map<String, serde_json::Value>;
 
 pub struct JsonObjectEditorWidget{
     pub code_editor_widget: CodeEditorWidget<JsonLanguage>,
-    pub parsed: Result<serde_json::Map<String, serde_json::Value>>
+    pub parsed: Result<JsonObject>
 }
 
 impl JsonObjectEditorWidget{
@@ -63,5 +67,26 @@ impl StatefulWidget for JsonObjectEditorWidget{
 
     fn state<'p>(&'p self) -> Self::Value<'p> {
         &self.parsed
+    }
+}
+
+impl Draw for JsonObjectEditorWidget{
+    type Resp = ();
+
+    fn draw<'args>(&mut self, args: DrawArgs<'args>) -> egui::InnerResponse<Self::Resp> {
+        args.ui.vertical(|ui|{
+            self.code_editor_widget.draw_and_parse(ui, args.id.with("code".as_ptr()));
+            self.parsed = serde_json::from_str(&self.code_editor_widget.raw)
+                .map_err(|err| err.into());
+            show_if_error(ui, &self.parsed);
+        })
+    }
+}
+
+impl GetValue for JsonObjectEditorWidget{
+    type Value<'val> = Result<&'val JsonObject> where Self: 'val;
+
+    fn get_value<'val>(&'val self) -> Self::Value<'val> {
+        self.parsed.as_ref().map_err(|e| e.clone())
     }
 }

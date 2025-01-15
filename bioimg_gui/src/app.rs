@@ -33,13 +33,14 @@ use crate::widgets::util::TaskChannel;
 use crate::widgets::version_widget::VersionWidget;
 use crate::widgets::weights_widget::WeightsWidget;
 use crate::widgets::zoo_widget::{upload_model, ZooLoginWidget};
-use crate::widgets::ValueWidget;
+use crate::widgets::{DrawArgs, ValueWidget};
 use crate::widgets::Restore;
 use crate::widgets::{
     author_widget::AuthorWidget, cite_widget::CiteEntryWidget, code_editor_widget::CodeEditorWidget,
     icon_widget::IconWidget, maintainer_widget::MaintainerWidget, url_widget::StagingUrl,
     util::group_frame, StatefulWidget,
 };
+use crate::widgets::Draw;
 
 #[derive(Default)]
 enum PackingStatus {
@@ -472,14 +473,14 @@ impl eframe::App for AppState1 {
                 });
                 ui.add_space(10.0);
 
-                ui.horizontal_top(|ui| {
+                let custom_config_resp = ui.horizontal_top(|ui| {
                     ui.weak("Custom configs: ").on_hover_text(
                         "A JSON value representing any extra, 'proprietary' parameters your model might need during runtime. \
                         This field is still available for legacy reasons and its use is strongly discouraged"
                     );
-                    self.custom_config_widget.draw_and_parse(ui, egui::Id::from("Custom configs"));
+                    self.custom_config_widget.draw(DrawArgs{ui, id: egui::Id::from("Custom configs")})
                     // let citation_results = self.staging_citations.state();
-                });
+                }).inner;
                 ui.add_space(10.0);
 
                 ui.horizontal_top(|ui| {
