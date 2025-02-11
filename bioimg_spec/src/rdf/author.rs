@@ -4,15 +4,15 @@ use serde::{Deserialize, Serialize};
 
 use crate::rdf::BoundedString;
 
-use super::orcid::Orcid;
+use super::{orcid::Orcid, slashless_string::SlashlessString};
 
 #[derive(Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Author {
-    pub name: BoundedString<1, 1024>,        // (Name→String) Full name. FIXME: disallow / and \.
-    pub affiliation: BoundedString<1, 1024>, // (String) Affiliation.
-    pub email: BoundedString<1, 1024>,       // FIXME: make a parser here (Email) E-Mail
-    pub github_user: BoundedString<1, 1024>, // (String) GitHub user name.
-    pub orcid: Orcid,
+    pub name: SlashlessString<String>,        // (Name→String) Full name. FIXME: disallow / and \.
+    pub affiliation: Option<String>, // (String) Affiliation.
+    pub email: Option<String>,       // FIXME: make a parser here (Email) E-Mail
+    pub github_user: Option<String>, // (String) GitHub user name.
+    pub orcid: Option<Orcid>,
 }
 
 #[derive(Debug, Eq, PartialEq, Serialize, Deserialize, Clone)]
@@ -34,17 +34,5 @@ impl Display for Author2{
             write!(f, " github: {github_user}")?;
         }
         Ok(())
-    }
-}
-
-impl From<Author> for Author2 {
-    fn from(value: Author) -> Self {
-        Author2 {
-            name: value.name,
-            affiliation: Some(value.affiliation),
-            email: Some(value.email),
-            github_user: Some(value.github_user),
-            orcid: Some(value.orcid),
-        }
     }
 }
