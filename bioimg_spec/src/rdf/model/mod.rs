@@ -6,6 +6,7 @@ pub mod axis_size;
 pub mod data_range;
 pub mod data_type;
 pub mod input_tensor;
+pub mod input_tensor_v4;
 pub mod output_tensor;
 pub mod preprocessing;
 pub mod postprocessing;
@@ -19,6 +20,7 @@ pub mod dataset_descr;
 pub mod unsupported;
 pub mod model_rdf_0_5;
 pub mod model_rdf_0_4;
+pub mod axis_letter_name;
 
 pub use axes::{
     AxisType, AxisId, AxisScale,

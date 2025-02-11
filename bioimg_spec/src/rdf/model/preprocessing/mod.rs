@@ -1,4 +1,5 @@
 pub mod scale_linear;
+pub mod scale_linear_v4;
 pub mod binarize;
 pub mod clip;
 pub mod sigmoid;
@@ -125,4 +126,25 @@ impl Display for PreprocessingDescr{
             Self::ScaleRange(prep) => prep.fmt(f),
         }
     }
+}
+
+///////////////////////////////////
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
+#[serde(tag = "name", content = "kwargs")]
+pub enum PreprocessingDescrV4 {
+    #[serde(rename = "binarize")]
+    Binarize(SimpleBinarizeDescr),
+    #[serde(rename = "clip")]
+    Clip(ClipDescr),
+    // #[serde(rename = "scale_linear")]
+    // ScaleLinear(ScaleLinearDescr),
+    // #[serde(rename = "sigmoid")]
+    // Sigmoid(Sigmoid),
+    // #[serde(rename = "fixed_zero_mean_unit_variance")]
+    // FixedZeroMeanUnitVariance(FixedZmuv),
+    // #[serde(rename = "zero_mean_unit_variance")]
+    // ZeroMeanUnitVariance(Zmuv),
+    // #[serde(rename = "scale_range")]
+    // ScaleRange(ScaleRangeDescr),
 }
