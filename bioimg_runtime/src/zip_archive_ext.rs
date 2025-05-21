@@ -1,14 +1,13 @@
 use std::{fmt::{Debug, Display}, io::{Read, Seek}, path::{Path, PathBuf}, sync::{Arc, Mutex}};
 
 use bioimg_spec::rdf;
+use rc_zip_sync as rczip;
 // use zip::{read::ZipFile, ZipArchive};
 
 
 pub trait SeekReadSend: Seek + Read + Send{}
 impl<T: Seek + Read + Send> SeekReadSend for T{}
 
-type BoxDynSeekReadSend = Box<dyn SeekReadSend + 'static>;
-type AnyZipArchive = zip::ZipArchive<BoxDynSeekReadSend>;
 
 /// Something that uniquely identifies a zip archive
 ///
@@ -42,26 +41,26 @@ impl Display for ZipArchiveIdentifier{
 }
 
 #[derive(Clone)]
-pub struct SharedZipArchive{
+pub struct SharedZipArchive<T: rczip::HasCursor + 'static>{
     identif: ZipArchiveIdentifier,
-    archive: Arc<Mutex<AnyZipArchive>>,
+    archive: Arc<Mutex<rczip::ArchiveHandle<'static, T>>>,
 }
 
-impl Debug for SharedZipArchive{
+impl<T: rczip::HasCursor + 'static> Debug for SharedZipArchive<T>{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "SharedZipArchive{{ identif: {:?} }}", self.identif)
     }
 }
 
-impl PartialEq for SharedZipArchive{
+impl<T: rczip::HasCursor + 'static> PartialEq for SharedZipArchive<T>{
     fn eq(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.archive, &other.archive)
     }
 }
-impl Eq for SharedZipArchive{}
+impl<T: rczip::HasCursor + 'static> Eq for SharedZipArchive<T>{}
 
 pub enum ZipArchiveError<E>{
-    ZipError(zip::result::ZipError),
+    ZipError(rc_zip_sync::result::ZipError),
     Other(E)
 }
 
@@ -98,7 +97,7 @@ impl SharedZipArchive{
     }
     pub fn with_entry<F, Out>(&self, name: &str, entry_reader: F) -> Result<Out, zip::result::ZipError>
     where
-        F: FnOnce(&mut zip::read::ZipFile<'_, BoxDynSeekReadSend>) -> Out,
+        F: FnOnce(&mut zip::read::ZipFile<'_, BoxDynHasCursor>) -> Out,
         Out: 'static,
     {
         let mut archive_guard = self.archive.lock().unwrap();
@@ -133,13 +132,13 @@ pub trait RdfFileReferenceExt{
         &self, archive: &SharedZipArchive, reader: F
     ) -> Result<Out, RdfFileReferenceReadError>
     where
-        F: FnOnce(&mut zip::read::ZipFile<'_, BoxDynSeekReadSend>) -> Out,
+        F: FnOnce(&mut zip::read::ZipFile<'_, BoxDynHasCursor>) -> Out,
         Out: 'static;
 }
 impl RdfFileReferenceExt for rdf::FileReference{
     fn try_read<F, Out>(&self, archive: &SharedZipArchive, reader: F) -> Result<Out, RdfFileReferenceReadError>
     where
-        F: FnOnce(&mut zip::read::ZipFile<'_, BoxDynSeekReadSend>) -> Out,
+        F: FnOnce(&mut zip::read::ZipFile<'_, BoxDynHasCursor>) -> Out,
         Out: 'static,
     {
         let inner_path: String = match self{

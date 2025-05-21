@@ -25,11 +25,11 @@ uuid = { workspace = true, features = ["v4"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tempfile = "3.14.0"
-zip = { workspace = true, default-features = true }
+rc-zip-sync = { workspace = true, default-features = true }
 ureq = "2.9.7"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-zip = {workspace = true, default-features = false, features=["deflate"]}
+rc-zip-sync = {workspace = true, default-features = false, features=["deflate"]}
 uuid = { workspace = true, features = ["js"] }
 web-sys = { version = "0.3.72", features = ["Request", "Response", "RequestInit", "Window"] }
 wasm-bindgen-futures = "0.4.45"
