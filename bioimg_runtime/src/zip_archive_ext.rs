@@ -40,52 +40,47 @@ impl Display for ZipArchiveIdentifier{
     }
 }
 
-#[derive(Clone)]
-pub struct SharedZipArchive<T: rczip::HasCursor + 'static>{
-    identif: ZipArchiveIdentifier,
-    archive: Arc<Mutex<rczip::ArchiveHandle<'static, T>>>,
+
+pub enum AnyZipArchive{
+    Memory(rczip::ArchiveHandle<'static, Vec<u8>>),
+    File(rczip::ArchiveHandle<'static, std::fs::File>)
 }
 
-impl<T: rczip::HasCursor + 'static> Debug for SharedZipArchive<T>{
+#[derive(Clone)]
+pub struct SharedZipArchive{
+    identif: ZipArchiveIdentifier,
+    archive_data: Arc<Mutex<AnyZipArchive>>,
+}
+
+impl Debug for SharedZipArchive{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "SharedZipArchive{{ identif: {:?} }}", self.identif)
     }
 }
 
-impl<T: rczip::HasCursor + 'static> PartialEq for SharedZipArchive<T>{
+impl PartialEq for SharedZipArchive{
     fn eq(&self, other: &Self) -> bool {
-        Arc::ptr_eq(&self.archive, &other.archive)
+        Arc::ptr_eq(&self.archive_data, &other.archive_data)
     }
 }
-impl<T: rczip::HasCursor + 'static> Eq for SharedZipArchive<T>{}
 
-pub enum ZipArchiveError<E>{
-    ZipError(rc_zip_sync::result::ZipError),
-    Other(E)
-}
+impl Eq for SharedZipArchive{}
 
-#[derive(thiserror::Error, Debug)]
-pub enum ZipArchiveOpenError{
-    #[error("Could read zip archive file: {0}")]
-    Io(#[from] std::io::Error),
-    #[error(transparent)]
-    Zip(#[from] zip::result::ZipError)
-}
 
 impl SharedZipArchive{
     pub fn identifier(&self) -> &ZipArchiveIdentifier{
         &self.identif
     }
-    pub fn open<P: AsRef<Path>>(p: P) -> Result<Self, ZipArchiveOpenError>{
-        let file: Box<dyn SeekReadSend + 'static> = Box::new(std::fs::File::open(p.as_ref())?);
-        let archive: AnyZipArchive = zip::ZipArchive::new(file)?;
+    pub fn open<P: AsRef<Path>>(p: P) -> Result<Self, std::io::Error>{
+        let file = std::fs::File::open(p.as_ref())?;
+        let archive = AnyZipArchive::File(rczip::ArchiveHandle)
         Ok(Self{
             identif: ZipArchiveIdentifier::Path(p.as_ref().to_owned()),
-            archive: Arc::new(Mutex::new(archive))
+            archive_data: Arc::new(Mutex::new(file))
         })
     }
-    pub fn new(identif: ZipArchiveIdentifier, archive: AnyZipArchive) -> Self{
-        Self{identif, archive: Arc::new(Mutex::new(archive))}
+    pub fn new(identif: ZipArchiveIdentifier, data: T) -> Self{
+        Self{identif, archive_data: Arc::new(Mutex::new(archive))}
     }
     pub fn from_raw_data(contents: Vec<u8>, ident: impl Into<ZipArchiveIdentifier>) -> Self{
         let reader: Box<dyn SeekReadSend + 'static> = Box::new(std::io::Cursor::new(contents));
